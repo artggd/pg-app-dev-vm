@@ -64,6 +64,7 @@ apt-get update
 apt-get -y upgrade
 
 apt-get -y install "postgresql-$PG_VERSION" "postgresql-contrib-$PG_VERSION"
+apt-get -y install postgresql-$PG_VERSION-postgis
 
 PG_CONF="/etc/postgresql/$PG_VERSION/main/postgresql.conf"
 PG_HBA="/etc/postgresql/$PG_VERSION/main/pg_hba.conf"
@@ -79,11 +80,28 @@ echo "host    all             all             all                     md5" >> "$
 service postgresql restart
 
 cat << EOF | su - postgres -c psql
+
+alter user postgres password 'postgres';
+
+execute "Psql template1 to UTF8" do
+user "postgres"
+command <<-SQL
+echo "
+UPDATE pg_database SET datistemplate = FALSE WHERE datname = 'template1';
+DROP DATABASE template1;
+CREATE DATABASE template1 WITH TEMPLATE = template0 ENCODING = 'UNICODE' LC_CTYPE='en_US.utf8'      LC_COLLATE='en_US.utf8';
+UPDATE pg_database SET datistemplate = TRUE WHERE datname = 'template1';
+\\c template1
+VACUUM FREEZE;" | psql postgres -t
+SQL
+# only_if '[ $(echo "select count(*) from pg_database where datname = \'template1\' and datcollate = \'en_US.utf8\'" |psql postgres -t) -eq 0 ]'
+end
+
 -- Create the database user:
 CREATE USER $APP_DB_USER WITH PASSWORD '$APP_DB_PASS';
 
 -- Create the database:
-CREATE DATABASE $APP_DB_NAME WITH OWNER $APP_DB_USER;
+CREATE DATABASE $APP_DB_NAME WITH OWNER $APP_DB_USER ENCODING 'UTF8';
 EOF
 
 # Tag the provision time:
