@@ -9,7 +9,7 @@ First install [Vagrant] and [Virtual Box].
 Then, run the following to create a new PostgreSQL app dev virtual machine:
 
 	# Clone it locally:
-    $ git clone https://github.com/jackdb/pg-app-dev-vm myapp
+    $ git clone https://github.com/ArtyDev/pg-app-dev-vm.git
 
     # Enter the cloned directory:
     $ cd myapp
